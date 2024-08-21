@@ -8,6 +8,67 @@ const expressWinston = require('express-winston');
 const app = express();
 const cors = require('cors');
 
+const swaggerJSDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
+
+const options = {
+    definition: {
+        openapi: '3.0.0',
+        info: { title: 'Grava-test-mongodb-api', version: '1.0.0' },
+        components: {
+            schemas: {
+                User: {
+                    type: 'object',
+                    properties: {
+                        _id: {
+                            type: 'string',
+                            example: '66c23c32f39c18b20120636b'
+                        },
+                        email: {
+                            type: 'string',
+                            example: 'user@example.com'
+                        },
+                        color: {
+                            type: 'string',
+                            example: 'blue'
+                        },
+                        enabled: {
+                            type: 'boolean',
+                            example: false
+                        },
+                        userLocation: {
+                            type: 'object',
+                            description: 'Location details of the user'
+                        },
+                        userInformation: {
+                            type: 'object',
+                            description: 'Additional information about the user'
+                        },
+                        createdAt: {
+                            type: 'string',
+                            format: 'date-time',
+                            example: '2024-08-18T18:23:46.995Z'
+                        },
+                        updatedAt: {
+                            type: 'string',
+                            format: 'date-time',
+                            example: '2024-08-19T18:28:08.937Z'
+                        },
+                        __v: {
+                            type: 'integer',
+                            example: 0
+                        }
+                    }
+                }
+            }
+        }
+    },
+    apis: ['./lib/routes/*'],
+};
+
+// Docs in JSON format
+const swaggerSpec = swaggerJSDoc(options);
+
 function connectMongoose() {
     const mongoose = require('mongoose');
     mongoose.Promise = Promise;
@@ -26,20 +87,22 @@ function initialize() {
     }));
     app.use(cors());
     app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded({extended: false}));
+    app.use(bodyParser.urlencoded({ extended: false }));
     app.use(cookieParser());
+
+    app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
     Object.keys(routes).forEach((key) => {
         app.use('/api', routes[key]);
     });
 
-    app.use(function(req, res, next) {
+    app.use(function (req, res, next) {
         let err = new Error('Not Found');
         err.status = 404;
         next(err);
     });
- 
-    app.use(function(err, req, res, next) {
+
+    app.use(function (err, req, res, next) {
         if (res.headersSent) {
             return next(err);
         }
